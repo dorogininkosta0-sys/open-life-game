@@ -1,123 +1,137 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Opel Life Racing</title>
-<style>
-* {
-  box-sizing: border-box;
-  touch-action: none;
-}
-body {
-  margin: 0;
-  background: #111;
-  color: white;
-  font-family: Arial, sans-serif;
-  text-align: center;
-  overflow: hidden;
-}
-h2 {
-  color: #ffcc00;
-  margin: 12px;
-}
-canvas {
-  display: block;
-  width: 100%;
-  height: 78vh;
-  max-width: 500px;
-  margin: auto;
-  background: #287a35;
-}
-.hint {
-  color: #ffcc00;
-  padding: 10px;
-  font-size: 14px;
-}
-</style>
-</head>
-<body>
+fillRect(left + roadW, 0, 5, H);
 
-<h2>🏁 OPEL LIFE RACING</h2>
-<canvas id="game" width="420" height="650"></canvas>
-<div class="hint">👆 Касайся левой или правой стороны экрана</div>
-
-<script>
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
-
-let carX = 190;
-let roadOffset = 0;
-let targetX = carX;
-let keys = {};
-
-function moveTo(x) {
-  targetX = x < window.innerWidth / 2 ? 110 : 270;
-}
-
-canvas.addEventListener("pointerdown", e => {
-  moveTo(e.clientX);
-});
-
-canvas.addEventListener("pointermove", e => {
-  if (e.buttons || e.pressure > 0) moveTo(e.clientX);
-});
-
-document.addEventListener("keydown", e => {
-  keys[e.key] = true;
-});
-document.addEventListener("keyup", e => {
-  keys[e.key] = false;
-});
-
-function drawCar(x, y) {
-  ctx.fillStyle = "#e32636";
-  ctx.fillRect(x, y, 40, 75);
-
-  ctx.fillStyle = "#111";
-  ctx.fillRect(x - 5, y + 10, 7, 20);
-  ctx.fillRect(x + 38, y + 10, 7, 20);
-  ctx.fillRect(x - 5, y + 48, 7, 20);
-  ctx.fillRect(x + 38, y + 48, 7, 20);
-
-  ctx.fillStyle = "#9eeaff";
-  ctx.fillRect(x + 6, y + 13, 28, 18);
-
-  ctx.fillStyle = "white";
-  ctx.fillRect(x + 7, y, 8, 5);
-  ctx.fillRect(x + 25, y, 8, 5);
-}
-
-function draw() {
-  ctx.fillStyle = "#287a35";
-  ctx.fillRect(0, 0, 420, 650);
-
-  ctx.fillStyle = "#444";
-  ctx.fillRect(65, 0, 290, 650);
-
-  ctx.fillStyle = "white";
-  ctx.fillRect(75, 0, 5, 650);
-  ctx.fillRect(340, 0, 5, 650);
-
-  ctx.fillStyle = "#ffcc00";
-  for (let y = -100; y < 700; y += 100) {
-    ctx.fillRect(207, y + roadOffset, 6, 50);
+  // Разметка
+  ctx.fillStyle = "#f4f0d8";
+  for (let y = -80 + roadOffset; y < H; y += 80) {
+    ctx.fillRect(W / 2 - 3, y, 6, 42);
+    ctx.fillRect(left + roadW / 3, y, 4, 42);
+    ctx.fillRect(left + roadW * 2 / 3, y, 4, 42);
   }
 
-  if (keys["ArrowLeft"]) targetX = 110;
-  if (keys["ArrowRight"]) targetX = 270;
-
-  carX += (targetX - carX) * 0.12;
-  carX = Math.max(90, Math.min(290, carX));
-
-  drawCar(carX, 520);
-
-  roadOffset = (roadOffset + 5) % 100;
-
-  requestAnimationFrame(draw);
+  // Ограждения
+  ctx.fillStyle = "#888";
+  ctx.fillRect(left - 13, 0, 5, H);
+  ctx.fillRect(left + roadW + 8, 0, 5, H);
 }
 
-draw();
+function drawHUD() {
+  ctx.fillStyle = "rgba(0,0,0,0.65)";
+  ctx.fillRect(12, 12, 190, 76);
+  ctx.fillStyle = "#fff";
+  ctx.font = "bold 17px Arial";
+  ctx.fillText("OPEL LIFE", 23, 39);
+  ctx.fillStyle = "#ffc928";
+  ctx.font = "bold 20px Arial";
+  ctx.fillText("RACING", 23, 62);
+  ctx.fillStyle = "#fff";
+  ctx.font = "bold 15px Arial";
+  ctx.fillText(Math.round(speed) + " KM/H", W - 125, 35);
+  ctx.font = "13px Arial";
+  ctx.fillText("СЧЁТ: " + score, W - 125, 57);
+  ctx.fillText("ПУТЬ: " + distance.toFixed(1) + " км", W - 125, 77);
+}
+
+function spawnEnemy() {
+  const roadW = Math.min(W * 0.88, 520);
+  const left = (W - roadW) / 2;
+  const lane = Math.floor(Math.random() * 3);
+  traffic.push({
+    x: left + roadW * (lane + 0.5) / 3,
+    y: -100,
+    speed: 0.55 + Math.random() * 0.3
+  });
+}
+
+function update(dt) {
+  if (paused || gameOver) return;
+
+  const roadW = Math.min(W * 0.88, 520);
+  const left = (W - roadW) / 2;
+  targetX = Math.max(left + 45, Math.min(left + roadW - 45, targetX));
+  playerX += (targetX - playerX) * Math.min(1, dt * 8);
+
+  distance += dt * speed / 3600;
+  score = Math.floor(distance * 100);
+  speed = Math.min(220, speed + dt * 1.3);
+
+  spawnTimer += dt;
+  if (spawnTimer > 1.5) {
+    spawnEnemy();
+    spawnTimer = 0;
+  }
+
+  traffic.forEach(car => {
+    car.y += speed * dt * car.speed;
+    if (Math.abs(car.x - playerX) < 42 &&
+        Math.abs(car.y - (H - 125)) < 65) {
+      gameOver = true;
+    }
+  });
+  traffic = traffic.filter(car => car.y < H + 100);
+}
+
+function draw(dt) {
+  ctx.clearRect(0, 0, W, H);
+  drawRoad(dt);
+
+  traffic.forEach(car => drawCar(car.x, car.y, 0.8, true));
+  drawCar(playerX, H - 125, 1, false);
+  drawHUD();
+
+  if (paused || gameOver) {
+    ctx.fillStyle = "rgba(0,0,0,0.72)";
+    ctx.fillRect(0, 0, W, H);
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#ffc928";
+    ctx.font = "bold 30px Arial";
+    ctx.fillText(gameOver ? "АВАРИЯ!" : "ПАУЗА", W / 2, H / 2 - 15);
+    ctx.fillStyle = "#fff";
+    ctx.font = "18px Arial";
+    ctx.fillText("Нажми, чтобы продолжить", W / 2, H / 2 + 25);
+    ctx.textAlign = "left";
+  }
+}
+
+function loop(time) {
+  const dt = Math.min((time - lastTime) / 1000 || 0, 0.04);
+  lastTime = time;
+  update(dt);
+  draw(dt);
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+// Управление касанием
+function steer(e) {
+  const x = e.clientX;
+  if (gameOver) {
+    restart();
+    return;
+  }
+  if (paused) {
+    paused = false;
+    return;
+  }
+  targetX += x < W / 2 ? -W * 0.22 : W * 0.22;
+}
+canvas.addEventListener("pointerdown", steer);
+
+// Клавиатура
+addEventListener("keydown", e => {
+  if (e.key === "ArrowLeft" || e.key === "a") targetX -= 45;
+  if (e.key === "ArrowRight" || e.key === "d") targetX += 45;
+  if (e.key === "Escape") paused = !paused;
+});
+
+function restart() {
+  traffic = [];
+  distance = 0;
+  score = 0;
+  speed = 142;
+  gameOver = false;
+  targetX = W / 2;
+  playerX = W / 2;
+}
 </script>
 </body>
 </html>
