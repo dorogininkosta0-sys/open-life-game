@@ -2,58 +2,91 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Opel Life Racing</title>
 <style>
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+  touch-action: none;
+}
 body {
   margin: 0;
-  background: #151515;
+  background: #111;
   color: white;
   font-family: Arial, sans-serif;
   text-align: center;
+  overflow: hidden;
 }
-h2 { color: #ffcc00; }
+h2 {
+  color: #ffcc00;
+  margin: 12px;
+}
 canvas {
-  width: 100%;
-  max-width: 420px;
-  height: 65vh;
   display: block;
+  width: 100%;
+  height: 78vh;
+  max-width: 500px;
   margin: auto;
-  background: #333;
-  border: 3px solid white;
+  background: #287a35;
 }
-.controls {
-  display: flex;
-  justify-content: center;
-  gap: 40px;
-  padding: 18px;
-}
-button {
-  width: 110px;
-  height: 65px;
-  font-size: 30px;
-  border: 0;
-  border-radius: 15px;
-  background: #ffcc00;
-  font-weight: bold;
+.hint {
+  color: #ffcc00;
+  padding: 10px;
+  font-size: 14px;
 }
 </style>
 </head>
 <body>
+
 <h2>🏁 OPEL LIFE RACING</h2>
 <canvas id="game" width="420" height="650"></canvas>
-<div class="controls">
-<button id="left">⬅️</button>
-<button id="right">➡️</button>
-</div>
+<div class="hint">👆 Касайся левой или правой стороны экрана</div>
+
 <script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
+
 let carX = 190;
 let roadOffset = 0;
-let left = false;
-let right = false;
+let targetX = carX;
+let keys = {};
+
+function moveTo(x) {
+  targetX = x < window.innerWidth / 2 ? 110 : 270;
+}
+
+canvas.addEventListener("pointerdown", e => {
+  moveTo(e.clientX);
+});
+
+canvas.addEventListener("pointermove", e => {
+  if (e.buttons || e.pressure > 0) moveTo(e.clientX);
+});
+
+document.addEventListener("keydown", e => {
+  keys[e.key] = true;
+});
+document.addEventListener("keyup", e => {
+  keys[e.key] = false;
+});
+
+function drawCar(x, y) {
+  ctx.fillStyle = "#e32636";
+  ctx.fillRect(x, y, 40, 75);
+
+  ctx.fillStyle = "#111";
+  ctx.fillRect(x - 5, y + 10, 7, 20);
+  ctx.fillRect(x + 38, y + 10, 7, 20);
+  ctx.fillRect(x - 5, y + 48, 7, 20);
+  ctx.fillRect(x + 38, y + 48, 7, 20);
+
+  ctx.fillStyle = "#9eeaff";
+  ctx.fillRect(x + 6, y + 13, 28, 18);
+
+  ctx.fillStyle = "white";
+  ctx.fillRect(x + 7, y, 8, 5);
+  ctx.fillRect(x + 25, y, 8, 5);
+}
 
 function draw() {
   ctx.fillStyle = "#287a35";
@@ -67,45 +100,22 @@ function draw() {
   ctx.fillRect(340, 0, 5, 650);
 
   ctx.fillStyle = "#ffcc00";
-  for (let y = -50; y < 700; y += 100) {
+  for (let y = -100; y < 700; y += 100) {
     ctx.fillRect(207, y + roadOffset, 6, 50);
   }
 
-  ctx.fillStyle = "#e32636";
-  ctx.fillRect(carX, 520, 40, 75);
-  ctx.fillStyle = "black";
-  ctx.fillRect(carX - 5, 530, 7, 20);
-  ctx.fillRect(carX + 38, 530, 7, 20);
-  ctx.fillRect(carX - 5, 565, 7, 20);
-  ctx.fillRect(carX + 38, 565, 7, 20);
-  ctx.fillStyle = "#9eeaff";
-  ctx.fillRect(carX + 6, 528, 28, 18);
-  ctx.fillStyle = "white";
-  ctx.fillRect(carX + 7, 520, 8, 5);
-  ctx.fillRect(carX + 25, 520, 8, 5);
+  if (keys["ArrowLeft"]) targetX = 110;
+  if (keys["ArrowRight"]) targetX = 270;
 
-  if (left) carX -= 5;
-  if (right) carX += 5;
-
+  carX += (targetX - carX) * 0.12;
   carX = Math.max(90, Math.min(290, carX));
+
+  drawCar(carX, 520);
+
   roadOffset = (roadOffset + 5) % 100;
 
   requestAnimationFrame(draw);
 }
-
-function control(id, direction) {
-  const btn = document.getElementById(id);
-  btn.addEventListener("pointerdown", e => {
-    e.preventDefault();
-    direction(true);
-  });
-  btn.addEventListener("pointerup", () => direction(false));
-  btn.addEventListener("pointerleave", () => direction(false));
-  btn.addEventListener("pointercancel", () => direction(false));
-}
-
-control("left", v => left = v);
-control("right", v => right = v);
 
 draw();
 </script>
