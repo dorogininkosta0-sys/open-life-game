@@ -3,58 +3,25 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>OPEL LIFE RACING</title>
 <style>
 *{box-sizing:border-box}
-body{
- margin:0;overflow:hidden;background:#080b10;color:white;
- font-family:Arial,sans-serif;touch-action:none;user-select:none
-}
+body{margin:0;background:#080d13;color:white;font-family:Arial;overflow:hidden;touch-action:none;user-select:none}
 canvas{display:block;width:100vw;height:100dvh;touch-action:none}
-.hud{
- position:fixed;top:14px;left:12px;right:12px;
- display:flex;justify-content:space-between;pointer-events:none
-}
-.panel{
- background:#101923df;border:1px solid #536575;
- border-radius:12px;padding:10px 13px
-}
-.speed{font-size:25px;font-weight:900;color:#55e6ff}
-.small{font-size:11px;color:#aebdca;margin-top:3px}
-.controls{
- position:fixed;top:91px;left:12px;right:12px;
- display:flex;justify-content:space-between
-}
-.controls button{
- background:#152331eF;color:white;border:1px solid #607586;
- padding:11px 14px;border-radius:10px;font-weight:bold
-}
-#overlay{
- position:fixed;inset:0;z-index:10;display:flex;
- align-items:center;justify-content:center;padding:20px;
- background:linear-gradient(#050910bb,#050910ee)
-}
-.box{
- width:min(420px,100%);text-align:center;padding:30px 22px;
- border-radius:22px;border:1px solid #455d70;
- background:linear-gradient(145deg,#172432,#080d14);
- box-shadow:0 15px 60px #000b
-}
-h1{font-size:32px;margin:0 0 12px;color:#63eaff}
-.subtitle{color:#b5c3ce;line-height:1.6;font-size:14px}
-.start{
- margin-top:22px;padding:15px 35px;border:0;border-radius:12px;
- background:linear-gradient(90deg,#00a9cf,#36e1ed);
- color:#04121a;font-size:17px;font-weight:900
-}
-.hint{font-size:12px;color:#8295a5;margin-top:17px}
+.hud{position:fixed;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;pointer-events:none}
+.panel{background:#101923eF;border:1px solid #536575;border-radius:12px;padding:10px 13px}
+.speed{font-size:25px;color:#55e6ff;font-weight:900}
+.small{font-size:11px;color:#b5c2cc;margin-top:3px}
+.controls{position:fixed;top:91px;left:12px;right:12px;display:flex;justify-content:space-between}
+.controls button{background:#152331;color:white;border:1px solid #607586;padding:11px 14px;border-radius:10px}
+#overlay{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;background:#050910d9;padding:20px}
+.box{width:min(420px,100%);padding:30px 22px;text-align:center;border:1px solid #455d70;border-radius:22px;background:linear-gradient(145deg,#172432,#080d14)}
+h1{color:#63eaff;font-size:31px}
+.subtitle{color:#c0ccd4;line-height:1.6;font-size:14px}
+.start{background:linear-gradient(90deg,#00a9cf,#36e1ed);border:0;border-radius:12px;padding:15px 30px;font-weight:bold;font-size:17px;margin-top:20px}
 .hidden{display:none!important}
-#touchHint{
- position:fixed;bottom:18px;left:0;right:0;
- text-align:center;color:#ffffff90;font-size:12px;
- pointer-events:none
-}
+#hint{position:fixed;bottom:17px;left:0;right:0;text-align:center;color:#ffffff99;font-size:12px;pointer-events:none}
 </style>
 </head>
 <body>
@@ -62,11 +29,11 @@ h1{font-size:32px;margin:0 0 12px;color:#63eaff}
 
 <div class="hud">
  <div class="panel">
-  <div class="speed"><span id="speed">0</span> км/ч</div>
+  <div class="speed"><span id="speed">30</span> км/ч</div>
   <div class="small">СКОРОСТЬ</div>
  </div>
  <div class="panel" style="text-align:right">
-  <div style="font-size:21px;font-weight:bold" id="score">0</div>
+  <b id="score">0</b>
   <div class="small">ОЧКИ</div>
   <div class="small">РЕКОРД: <span id="record">0</span></div>
  </div>
@@ -76,19 +43,18 @@ h1{font-size:32px;margin:0 0 12px;color:#63eaff}
  <button id="sound">♫ ЗВУК: ВЫКЛ</button>
  <button id="pause">Ⅱ ПАУЗА</button>
 </div>
-
-<div id="touchHint">КАСАЙСЯ ЛЕВОЙ ИЛИ ПРАВОЙ ЧАСТИ ЭКРАНА</div>
+<div id="hint">ЛЕВАЯ СТОРОНА — ВЛЕВО · ПРАВАЯ — ВПРАВО</div>
 
 <div id="overlay">
  <div class="box">
   <h1>OPEL LIFE RACING</h1>
   <div class="subtitle" id="message">
-   Твоя дорога начинается здесь.<br>
-   Opel Astra H GTC · А666АА66<br><br>
-   Камера сзади. Управление пальцем.
+   Opel Astra H GTC<br>
+   Серебристая · А666АА66<br><br>
+   Камера сзади. Сенсорное управление.
   </div>
   <button class="start" id="start">НАЧАТЬ ЗАЕЗД</button>
-  <div class="hint">Уходи от машин и набирай очки!</div>
+  <p class="small">Уходи от машин и набирай очки!</p>
  </div>
 </div>
 
@@ -96,279 +62,235 @@ h1{font-size:32px;margin:0 0 12px;color:#63eaff}
 const canvas=document.getElementById("game");
 const ctx=canvas.getContext("2d");
 
-let W,H,dpr,horizon,roadBottom,roadTop;
+let W,H,DPR;
 let running=false,paused=false;
-let playerLane=1,targetLane=1;
-let speed=30,score=0,distance=0;
+let speed=30,score=0,record=Number(localStorage.getItem("opelRecord")||0);
+let distance=0,roadPhase=0;
+let playerX=0,targetX=0;
 let traffic=[],spawnTimer=0,lastTime=0;
-let record=Number(localStorage.getItem("opelRecord")||0);
 let soundOn=false,audio=null,musicTimer=null;
 
 document.getElementById("record").textContent=record;
 
 function resize(){
- dpr=Math.min(devicePixelRatio||1,2);
+ DPR=Math.min(devicePixelRatio||1,2);
  W=innerWidth;H=innerHeight;
- canvas.width=W*dpr;canvas.height=H*dpr;
+ canvas.width=W*DPR;canvas.height=H*DPR;
  canvas.style.width=W+"px";canvas.style.height=H+"px";
- ctx.setTransform(dpr,0,0,dpr,0,0);
- horizon=H*.29;
- roadBottom=W*.88;
- roadTop=Math.min(W*.20,130);
+ ctx.setTransform(DPR,0,0,DPR,0,0);
+ if(!playerX){playerX=W/2;targetX=W/2}
 }
 addEventListener("resize",resize);
 resize();
 
-function roadWidthAt(y){
- let t=Math.max(0,Math.min(1,(y-horizon)/(H-horizon)));
- return roadTop+(roadBottom-roadTop)*t;
+function roadTop(){return H*.29}
+function roadWidth(y){
+ let t=Math.max(0,Math.min(1,(y-roadTop())/(H-roadTop())));
+ return W*(.19+.69*t);
 }
-function roadLeftAt(y){return W/2-roadWidthAt(y)/2}
+function roadLeft(y){return W/2-roadWidth(y)/2}
 function laneX(lane,y){
- return roadLeftAt(y)+roadWidthAt(y)*(lane+.5)/3;
+ return roadLeft(y)+roadWidth(y)*(lane+.5)/3;
 }
-function poly(points,color){
- ctx.fillStyle=color;
- ctx.beginPath();
+function polygon(points,color){
+ ctx.fillStyle=color;ctx.beginPath();
  ctx.moveTo(points[0][0],points[0][1]);
- points.slice(1).forEach(p=>ctx.lineTo(p[0],p[1]));
+ for(let i=1;i<points.length;i++)ctx.lineTo(points[i][0],points[i][1]);
  ctx.closePath();ctx.fill();
 }
 
-function drawBackground(){
- let sky=ctx.createLinearGradient(0,0,0,horizon);
- sky.addColorStop(0,"#101d32");
- sky.addColorStop(1,"#8295a2");
- ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
+function drawRoad(dt){
+ let h=roadTop();
 
- // Дальний горизонт и силуэты
- ctx.fillStyle="#263b3b";
- for(let i=0;i<12;i++){
-  let x=i*W/10;
-  let bh=25+(i*37%55);
-  ctx.fillRect(x,horizon-bh,W/18,bh);
+ let sky=ctx.createLinearGradient(0,0,0,h);
+ sky.addColorStop(0,"#101c30");
+ sky.addColorStop(1,"#a0b2b9");
+ ctx.fillStyle=sky;ctx.fillRect(0,0,W,h);
+
+ // Дальний пейзаж
+ ctx.fillStyle="#283c35";
+ for(let i=0;i<15;i++){
+  let x=i*W/13;
+  let bh=20+(i*31%48);
+  ctx.fillRect(x,h-bh,W/17,bh);
  }
- ctx.fillStyle="#263d27";
- ctx.fillRect(0,horizon,W,H-horizon);
+ ctx.fillStyle="#29412c";
+ ctx.fillRect(0,h,W,H-h);
 
  // Дорога
- poly([
-  [W/2-roadTop/2,horizon],
-  [W/2+roadTop/2,horizon],
-  [W/2+roadBottom/2,H],
-  [W/2-roadBottom/2,H]
- ],"#343a40");
+ polygon([[W/2-W*.095,h],[W/2+W*.095,h],
+ [W/2+W*.445,H],[W/2-W*.445,H]],"#343a40");
 
- // Обочины
- poly([
-  [W/2-roadTop/2-9,horizon],
-  [W/2-roadTop/2,horizon],
-  [W/2-roadBottom/2,H],
-  [W/2-roadBottom/2-22,H]
- ],"#d8d5c5");
- poly([
-  [W/2+roadTop/2,horizon],
-  [W/2+roadTop/2+9,horizon],
-  [W/2+roadBottom/2+22,H],
-  [W/2+roadBottom/2,H]
- ],"#d8d5c5");
+ // Края дороги
+ let edgeTop=W*.19,edgeBottom=W*.89;
+ polygon([[W/2-edgeTop/2,h],[W/2-edgeTop/2-7,h],
+ [W/2-edgeBottom/2-18,H],[W/2-edgeBottom/2,H]],"#d8d4c4");
+ polygon([[W/2+edgeTop/2,h],[W/2+edgeTop/2+7,h],
+ [W/2+edgeBottom/2+18,H],[W/2+edgeBottom/2,H]],"#d8d4c4");
 
- // Дорожная разметка
+ // Движущаяся разметка
  for(let lane=1;lane<=2;lane++){
-  for(let i=0;i<13;i++){
-   let p=((i/13+distance*.0015)%1);
-   let y=horizon+p*p*(H-horizon);
-   let width=roadWidthAt(y)*.008;
-   let dash=4+p*30;
-   ctx.fillStyle="#eee9d7";
-   ctx.fillRect(W/2-roadWidthAt(y)/2+roadWidthAt(y)*lane/3-width/2,
-    y,width,dash);
+  for(let i=0;i<16;i++){
+   let p=(i/16+roadPhase)%1;
+   let y=h+p*p*(H-h);
+   let rw=roadWidth(y);
+   let x=W/2-rw/2+rw*lane/3;
+   let dash=3+p*39;
+   ctx.fillStyle="#f0eddf";
+   ctx.fillRect(x-1.5-p*1.5,y,3+p*3,dash);
   }
  }
 
- // Деревья вдоль дороги
+ // Движущиеся деревья
  for(let side of [-1,1]){
-  for(let i=0;i<9;i++){
-   let p=((i/9+distance*.001)%1);
-   let y=horizon+p*p*(H-horizon);
-   let rw=roadWidthAt(y);
-   let x=W/2+side*(rw/2+15+p*55);
+  for(let i=0;i<11;i++){
+   let p=(i/11+roadPhase*.8)%1;
+   let y=h+p*p*(H-h);
+   let rw=roadWidth(y);
+   let x=W/2+side*(rw/2+12+p*48);
    let size=5+p*19;
-   ctx.fillStyle="#315b35";
-   ctx.beginPath();ctx.arc(x,y-size*.6,size,0,Math.PI*2);ctx.fill();
-   ctx.fillStyle="#59452d";
-   ctx.fillRect(x-size*.12,y-size*.2,size*.24,size);
+   ctx.fillStyle="#37613b";
+   ctx.beginPath();ctx.arc(x,y-size*.55,size,0,Math.PI*2);ctx.fill();
+   ctx.fillStyle="#5a432c";
+   ctx.fillRect(x-size*.13,y-size*.15,size*.26,size*.8);
   }
  }
 }
 
-function rounded(x,y,w,h,r,color){
- ctx.fillStyle=color;
- ctx.beginPath();
- ctx.roundRect(x,y,w,h,r);
- ctx.fill();
+function rr(x,y,w,h,r,color){
+ ctx.fillStyle=color;ctx.beginPath();
+ ctx.roundRect(x,y,w,h,r);ctx.fill();
 }
 
-// Машина сзади
-function drawRearCar(x,y,w,color,isPlayer=false){
- const h=w*1.52;
- ctx.save();
- ctx.translate(x,y);
+function drawCar(x,y,w,color,isPlayer=false){
+ let h=w*1.5;
+ ctx.save();ctx.translate(x,y);
 
  // Тень
  ctx.fillStyle="#0009";
- ctx.beginPath();
- ctx.ellipse(0,h*.84,w*.64,h*.12,0,0,Math.PI*2);
- ctx.fill();
+ ctx.beginPath();ctx.ellipse(0,h*.83,w*.67,h*.13,0,0,Math.PI*2);ctx.fill();
 
  // Колёса
- rounded(-w*.52,h*.37,w*.16,h*.39,4,"#080a0c");
- rounded(w*.36,h*.37,w*.16,h*.39,4,"#080a0c");
+ rr(-w*.52,h*.35,w*.17,h*.42,5,"#080a0d");
+ rr(w*.35,h*.35,w*.17,h*.42,5,"#080a0d");
 
- // Кузов и задние крылья
- ctx.fillStyle=color;
+ // Кузов
+ let grad=ctx.createLinearGradient(-w/2,0,w/2,0);
+ grad.addColorStop(0,"#626d76");
+ grad.addColorStop(.18,color);
+ grad.addColorStop(.5,"#edf0f1");
+ grad.addColorStop(.82,color);
+ grad.addColorStop(1,"#69737b");
+ ctx.fillStyle=grad;
  ctx.beginPath();
- ctx.moveTo(-w*.36,h*.12);
- ctx.lineTo(-w*.46,h*.31);
- ctx.lineTo(-w*.52,h*.79);
- ctx.quadraticCurveTo(-w*.5,h*.91,-w*.35,h*.94);
- ctx.lineTo(w*.35,h*.94);
- ctx.quadraticCurveTo(w*.5,h*.91,w*.52,h*.79);
- ctx.lineTo(w*.46,h*.31);
- ctx.lineTo(w*.36,h*.12);
- ctx.quadraticCurveTo(0,-h*.01,-w*.36,h*.12);
- ctx.fill();
-
- // Блики кузова
- let shine=ctx.createLinearGradient(-w/2,0,w/2,0);
- shine.addColorStop(0,"#66717a");
- shine.addColorStop(.25,color);
- shine.addColorStop(.5,"#eef2f4");
- shine.addColorStop(.75,color);
- shine.addColorStop(1,"#66717a");
- ctx.fillStyle=shine;
- ctx.beginPath();
- ctx.moveTo(-w*.35,h*.19);
- ctx.lineTo(w*.35,h*.19);
- ctx.lineTo(w*.45,h*.8);
- ctx.lineTo(-w*.45,h*.8);
+ ctx.moveTo(-w*.36,h*.10);
+ ctx.lineTo(w*.36,h*.10);
+ ctx.lineTo(w*.47,h*.32);
+ ctx.lineTo(w*.52,h*.79);
+ ctx.quadraticCurveTo(w*.5,h*.93,w*.35,h*.96);
+ ctx.lineTo(-w*.35,h*.96);
+ ctx.quadraticCurveTo(-w*.5,h*.93,-w*.52,h*.79);
+ ctx.lineTo(-w*.47,h*.32);
  ctx.closePath();ctx.fill();
 
  // Заднее стекло
- poly([
-  [-w*.32,h*.13],[w*.32,h*.13],
-  [w*.39,h*.39],[-w*.39,h*.39]
- ],"#142b3b");
- ctx.strokeStyle="#71828b";
- ctx.lineWidth=Math.max(1,w*.018);
+ polygon([[-w*.33,h*.13],[w*.33,h*.13],
+ [w*.39,h*.39],[-w*.39,h*.39]],"#152c3b");
+ ctx.strokeStyle="#85939a";ctx.lineWidth=Math.max(1,w*.018);
  ctx.stroke();
 
- // Небольшой спойлер
- rounded(-w*.39,h*.10,w*.78,h*.035,3,"#6d777e");
+ // Стоп-сигнал на спойлере
+ rr(-w*.4,h*.095,w*.8,h*.035,2,"#4e5a62");
+ rr(-w*.13,h*.105,w*.26,h*.018,1,"#ed3338");
 
  // Крышка багажника
- rounded(-w*.39,h*.42,w*.78,h*.29,4,shine);
+ rr(-w*.39,h*.43,w*.78,h*.28,4,grad);
 
- // Логотип Opel
- ctx.strokeStyle="#dce5e9";
- ctx.lineWidth=Math.max(1,w*.025);
- ctx.beginPath();ctx.arc(0,h*.55,w*.065,0,Math.PI*2);ctx.stroke();
- ctx.beginPath();ctx.moveTo(-w*.1,h*.55);
- ctx.lineTo(w*.1,h*.55);ctx.stroke();
+ // Opel эмблема
+ ctx.strokeStyle="#e5e9eb";ctx.lineWidth=Math.max(1,w*.023);
+ ctx.beginPath();ctx.arc(0,h*.55,w*.062,0,Math.PI*2);ctx.stroke();
+ ctx.beginPath();ctx.moveTo(-w*.095,h*.55);ctx.lineTo(w*.095,h*.55);ctx.stroke();
 
- // Фонари
- rounded(-w*.46,h*.40,w*.18,h*.22,4,"#9b1820");
- rounded(w*.28,h*.40,w*.18,h*.22,4,"#9b1820");
- rounded(-w*.43,h*.43,w*.11,h*.12,3,"#ff3841");
- rounded(w*.32,h*.43,w*.11,h*.12,3,"#ff3841");
- rounded(-w*.43,h*.56,w*.11,h*.035,2,"#f7e6d2");
- rounded(w*.32,h*.56,w*.11,h*.035,2,"#f7e6d2");
+ // Задние фонари
+ rr(-w*.47,h*.40,w*.19,h*.24,5,"#8c1820");
+ rr(w*.28,h*.40,w*.19,h*.24,5,"#8c1820");
+ rr(-w*.44,h*.43,w*.12,h*.13,3,"#ff303a");
+ rr(w*.32,h*.43,w*.12,h*.13,3,"#ff303a");
+ rr(-w*.44,h*.58,w*.12,h*.035,2,"#f7e4ce");
+ rr(w*.32,h*.58,w*.12,h*.035,2,"#f7e4ce");
 
  // Номер
- rounded(-w*.23,h*.70,w*.46,h*.105,3,"#f4f2e8");
+ rr(-w*.23,h*.70,w*.46,h*.11,3,"#f5f3e9");
  ctx.fillStyle="#111";
- ctx.font=`bold ${Math.max(5,w*.075)}px Arial`;
+ ctx.font=`bold ${Math.max(5,w*.073)}px Arial`;
  ctx.textAlign="center";
- ctx.fillText(isPlayer?"А666АА66":"OPEL",0,h*.775);
+ ctx.fillText(isPlayer?"А666АА66":"OPEL",0,h*.778);
 
- // Бампер
- ctx.strokeStyle="#65717a";
- ctx.lineWidth=Math.max(1,w*.025);
- ctx.beginPath();
- ctx.moveTo(-w*.4,h*.84);
- ctx.lineTo(w*.4,h*.84);
- ctx.stroke();
- rounded(-w*.32,h*.88,w*.15,h*.045,3,"#20272c");
- rounded(w*.17,h*.88,w*.15,h*.045,3,"#20272c");
+ // Бампер и выхлоп
+ ctx.strokeStyle="#59636b";ctx.lineWidth=Math.max(1,w*.025);
+ ctx.beginPath();ctx.moveTo(-w*.42,h*.85);ctx.lineTo(w*.42,h*.85);ctx.stroke();
+ rr(-w*.34,h*.89,w*.14,h*.045,3,"#20272c");
+ rr(w*.20,h*.89,w*.14,h*.045,3,"#20272c");
 
- if(isPlayer){
-  // Свет фонарей на дороге
-  ctx.globalAlpha=.10;
-  poly([
-   [-w*.37,h*.92],[w*.37,h*.92],
-   [w*1.4,h*2.4],[-w*1.4,h*2.4]
-  ],"#ffdfaa");
- }
  ctx.restore();
-}
-
-function drawTraffic(){
- traffic.forEach(car=>{
-  const y=car.p*(H-horizon)+horizon;
-  const w=roadWidthAt(y)*.105;
-  drawRearCar(laneX(car.lane,y),y,w,car.color,false);
- });
 }
 
 function draw(){
  ctx.clearRect(0,0,W,H);
- drawBackground();
- drawTraffic();
+ drawRoad();
+ for(const car of traffic){
+  let y=roadTop()+car.p*(H-roadTop());
+  let w=roadWidth(y)*.105;
+  drawCar(laneX(car.lane,y),y,w,car.color,false);
+ }
 
- // Игрок всегда в нижней части экрана
- const playerX=laneX(playerLane,H);
- drawRearCar(playerX,H-10,roadBottom*.24,"#b9c2c9",true);
+ // Плавное движение автомобиля влево и вправо
+const playerY=H-30;
+const playerW=Math.min(W*.48, roadWidth(H)*.32);
+ drawCar(playerX,playerY,playerW,"#b9c2c9",true);
 
- // Лёгкое свечение фар
- const glow=ctx.createRadialGradient(playerX,H-35,5,playerX,H-35,roadBottom*.25);
- glow.addColorStop(0,"#ffffff12");
+ // Свет фар впереди и лёгкая вибрация кузова
+ const glow=ctx.createRadialGradient(playerX,H-30,5,playerX,H-30,playerW*1.4);
+ glow.addColorStop(0,"#ffffff15");
  glow.addColorStop(1,"#ffffff00");
- ctx.fillStyle=glow;
- ctx.fillRect(0,H*.55,W,H*.45);
+ ctx.fillStyle=glow;ctx.fillRect(0,H*.55,W,H*.45);
 }
 
 function spawnTraffic(){
- const lane=Math.floor(Math.random()*3);
+ let lane=Math.floor(Math.random()*3);
  traffic.push({
   lane,p:0,
-  color:["#bd3037","#d8dce0","#202b38","#c49a42","#27639a"][Math.floor(Math.random()*5)]
+  color:["#c52f36","#e4e6e8","#202b38","#c39a43","#28639a"][Math.floor(Math.random()*5)]
  });
 }
 
 function update(dt){
  if(!running||paused)return;
 
- speed=Math.min(220,speed+dt*2.2);
- distance+=speed*dt*.09;
- score+=Math.floor(speed*dt*.05);
+ speed=Math.min(220,speed+dt*2.4);
+ distance+=speed*dt;
+ roadPhase=(roadPhase+dt*(.13+speed*.0018))%1;
 
- playerLane+=(targetLane-playerLane)*Math.min(1,dt*9);
+ // Плавное движение машины
+ playerX+=(targetX-playerX)*Math.min(1,dt*7);
+ playerX=Math.max(W/2-roadWidth(H)*.43,
+ Math.min(W/2+roadWidth(H)*.43,playerX));
 
+ score+=Math.floor(speed*dt*.04);
  spawnTimer+=dt;
- if(spawnTimer>Math.max(.55,1.5-speed/240)){
-  spawnTraffic();
-  spawnTimer=0;
+
+ if(spawnTimer>Math.max(.55,1.65-speed/230)){
+  spawnTraffic();spawnTimer=0;
  }
 
  traffic.forEach(car=>{
-  car.p+=dt*(.13+speed*.00065);
+  car.p+=dt*(.12+speed*.0017);
  });
  traffic=traffic.filter(car=>car.p<1.15);
 
  for(const car of traffic){
-  const gap=Math.abs(car.p-.91);
-  const laneGap=Math.abs(car.lane-playerLane);
-  if(gap<.055&&laneGap<.42){
+  if(Math.abs(car.p-.91)<.055 &&
+  Math.abs(laneX(car.lane,H)-playerX)<roadWidth(H)*.12){
    endGame();return;
   }
  }
@@ -378,19 +300,17 @@ function update(dt){
 }
 
 function loop(time){
- const dt=Math.min((time-lastTime)/1000||0,.04);
+ let dt=Math.min((time-lastTime)/1000||0,.04);
  lastTime=time;
- update(dt);
- draw();
+ update(dt);draw();
  requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);
 
 function startGame(){
- traffic=[];
- score=0;speed=30;distance=0;
- spawnTimer=0;
- playerLane=1;targetLane=1;
+ traffic=[];score=0;speed=30;distance=0;
+ roadPhase=0;spawnTimer=0;
+ playerX=W/2;targetX=W/2;
  running=true;paused=false;
  lastTime=performance.now();
  document.getElementById("overlay").classList.add("hidden");
@@ -406,8 +326,8 @@ function endGame(){
   document.getElementById("record").textContent=record;
  }
  document.getElementById("message").innerHTML=
-  "ЗАЕЗД ОКОНЧЕН<br><br>Очки: "+score+
-  "<br>Максимальная скорость: "+Math.round(speed)+" км/ч";
+ "ЗАЕЗД ОКОНЧЕН<br><br>Очки: "+score+
+ "<br>Скорость: "+Math.round(speed)+" км/ч";
  document.getElementById("start").textContent="ЕЩЁ ОДИН ЗАЕЗД";
  document.getElementById("overlay").classList.remove("hidden");
  stopMusic();
@@ -422,35 +342,36 @@ document.getElementById("pause").onclick=()=>{
  if(!running)return;
  paused=!paused;
  document.getElementById("pause").textContent=
-  paused?"▶ ПРОДОЛЖИТЬ":"Ⅱ ПАУЗА";
+ paused?"▶ ПРОДОЛЖИТЬ":"Ⅱ ПАУЗА";
 };
 
+// Сенсор: касание половины экрана задаёт направление
 function steer(x){
  if(!running||paused)return;
- if(x<W/2)targetLane=Math.max(0,Math.round(playerLane)-1);
- else targetLane=Math.min(2,Math.round(playerLane)+1);
+ const step=roadWidth(H)*.29;
+ targetX=Math.max(W/2-roadWidth(H)*.39,
+ Math.min(W/2+roadWidth(H)*.39,
+ targetX+(x<W/2?-step:step)));
 }
-canvas.addEventListener("pointerdown",e=>{
- steer(e.clientX);
-});
+canvas.addEventListener("pointerdown",e=>steer(e.clientX));
 canvas.addEventListener("pointermove",e=>{
- if(e.buttons||e.pointerType==="touch")steer(e.clientX);
+ if(e.pointerType==="touch"||e.buttons) {
+  if(e.clientX<W*.35)targetX=Math.max(W/2-roadWidth(H)*.39,targetX-3);
+  if(e.clientX>W*.65)targetX=Math.min(W/2+roadWidth(H)*.39,targetX+3);
+ }
 });
 canvas.addEventListener("contextmenu",e=>e.preventDefault());
 
-// Звук: оригинальная мелодия
+// Оригинальная мелодия
 function startMusic(){
  if(!audio)audio=new(window.AudioContext||window.webkitAudioContext)();
- audio.resume();
- stopMusic();
+ audio.resume();stopMusic();
  const notes=[220,261.63,329.63,293.66,246.94,293.66,349.23,329.63];
  let i=0;
  musicTimer=setInterval(()=>{
   if(!soundOn||!running||paused)return;
-  const osc=audio.createOscillator();
-  const gain=audio.createGain();
-  osc.type="sine";
-  osc.frequency.value=notes[i++%notes.length];
+  let osc=audio.createOscillator(),gain=audio.createGain();
+  osc.type="sine";osc.frequency.value=notes[i++%notes.length];
   gain.gain.setValueAtTime(.0001,audio.currentTime);
   gain.gain.exponentialRampToValueAtTime(.035,audio.currentTime+.08);
   gain.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+.55);
@@ -464,7 +385,7 @@ function stopMusic(){
 document.getElementById("sound").onclick=()=>{
  soundOn=!soundOn;
  document.getElementById("sound").textContent=
-  soundOn?"♫ ЗВУК: ВКЛ":"♫ ЗВУК: ВЫКЛ";
+ soundOn?"♫ ЗВУК: ВКЛ":"♫ ЗВУК: ВЫКЛ";
  if(soundOn&&running&&!paused)startMusic();
  else stopMusic();
 };
