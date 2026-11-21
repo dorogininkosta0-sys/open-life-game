@@ -10,21 +10,25 @@
 body{margin:0;background:#080d13;color:white;font-family:Arial;overflow:hidden;touch-action:none;user-select:none}
 canvas{display:block;width:100vw;height:100dvh;touch-action:none}
 .hud{position:fixed;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;pointer-events:none}
-.panel{background:#101923eF;border:1px solid #536575;border-radius:12px;padding:10px 13px}
+.panel{background:#101923ed;border:1px solid #536575;border-radius:12px;padding:10px 13px}
 .speed{font-size:25px;color:#55e6ff;font-weight:900}
 .small{font-size:11px;color:#b5c2cc;margin-top:3px}
 .controls{position:fixed;top:91px;left:12px;right:12px;display:flex;justify-content:space-between}
-.controls button{background:#152331;color:white;border:1px solid #607586;padding:11px 14px;border-radius:10px}
+.controls button,.steering button{background:#152331;color:white;border:1px solid #607586;border-radius:12px;font-weight:bold}
+.controls button{padding:11px 14px}
+.steering{position:fixed;bottom:25px;left:0;right:0;display:flex;justify-content:space-between;padding:0 25px;pointer-events:none}
+.steering button{pointer-events:auto;width:76px;height:65px;font-size:30px;background:#14283add;border:2px solid #58cce5}
 #overlay{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;background:#050910d9;padding:20px}
 .box{width:min(420px,100%);padding:30px 22px;text-align:center;border:1px solid #455d70;border-radius:22px;background:linear-gradient(145deg,#172432,#080d14)}
 h1{color:#63eaff;font-size:31px}
 .subtitle{color:#c0ccd4;line-height:1.6;font-size:14px}
 .start{background:linear-gradient(90deg,#00a9cf,#36e1ed);border:0;border-radius:12px;padding:15px 30px;font-weight:bold;font-size:17px;margin-top:20px}
 .hidden{display:none!important}
-#hint{position:fixed;bottom:17px;left:0;right:0;text-align:center;color:#ffffff99;font-size:12px;pointer-events:none}
+#hint{position:fixed;bottom:103px;left:0;right:0;text-align:center;color:#ffffff99;font-size:11px;pointer-events:none}
 </style>
 </head>
 <body>
+
 <canvas id="game"></canvas>
 
 <div class="hud">
@@ -43,7 +47,13 @@ h1{color:#63eaff;font-size:31px}
  <button id="sound">♫ ЗВУК: ВЫКЛ</button>
  <button id="pause">Ⅱ ПАУЗА</button>
 </div>
-<div id="hint">ЛЕВАЯ СТОРОНА — ВЛЕВО · ПРАВАЯ — ВПРАВО</div>
+
+<div class="steering">
+ <button id="left">←</button>
+ <button id="right">→</button>
+</div>
+
+<div id="hint">УПРАВЛЕНИЕ СТРЕЛКАМИ</div>
 
 <div id="overlay">
  <div class="box">
@@ -51,7 +61,7 @@ h1{color:#63eaff;font-size:31px}
   <div class="subtitle" id="message">
    Opel Astra H GTC<br>
    Серебристая · А666АА66<br><br>
-   Камера сзади. Сенсорное управление.
+   Камера строго сверху.
   </div>
   <button class="start" id="start">НАЧАТЬ ЗАЕЗД</button>
   <p class="small">Уходи от машин и набирай очки!</p>
@@ -64,8 +74,9 @@ const ctx=canvas.getContext("2d");
 
 let W,H,DPR;
 let running=false,paused=false;
-let speed=30,score=0,record=Number(localStorage.getItem("opelRecord")||0);
-let distance=0,roadPhase=0;
+let speed=30,score=0;
+let record=Number(localStorage.getItem("opelRecord")||0);
+let roadPhase=0;
 let playerX=0,targetX=0;
 let traffic=[],spawnTimer=0,lastTime=0;
 let soundOn=false,audio=null,musicTimer=null;
@@ -75,162 +86,160 @@ document.getElementById("record").textContent=record;
 function resize(){
  DPR=Math.min(devicePixelRatio||1,2);
  W=innerWidth;H=innerHeight;
- canvas.width=W*DPR;canvas.height=H*DPR;
- canvas.style.width=W+"px";canvas.style.height=H+"px";
+ canvas.width=W*DPR;
+ canvas.height=H*DPR;
+ canvas.style.width=W+"px";
+ canvas.style.height=H+"px";
  ctx.setTransform(DPR,0,0,DPR,0,0);
  if(!playerX){playerX=W/2;targetX=W/2}
 }
 addEventListener("resize",resize);
 resize();
 
-function roadTop(){return H*.29}
-function roadWidth(y){
- let t=Math.max(0,Math.min(1,(y-roadTop())/(H-roadTop())));
- return W*(.19+.69*t);
-}
-function roadLeft(y){return W/2-roadWidth(y)/2}
-function laneX(lane,y){
- return roadLeft(y)+roadWidth(y)*(lane+.5)/3;
-}
-function polygon(points,color){
- ctx.fillStyle=color;ctx.beginPath();
- ctx.moveTo(points[0][0],points[0][1]);
- for(let i=1;i<points.length;i++)ctx.lineTo(points[i][0],points[i][1]);
- ctx.closePath();ctx.fill();
+function roadWidth(){return W*.82}
+function roadLeft(){return (W-roadWidth())/2}
+function laneWidth(){return roadWidth()/3}
+function laneX(lane){return roadLeft()+laneWidth()*(lane+.5)}
+
+function rr(x,y,w,h,r,color){
+ ctx.fillStyle=color;
+ ctx.beginPath();
+ ctx.roundRect(x,y,w,h,r);
+ ctx.fill();
 }
 
 function drawRoad(dt){
- let h=roadTop();
+ // Фон
+ ctx.fillStyle="#263c2c";
+ ctx.fillRect(0,0,W,H);
 
- let sky=ctx.createLinearGradient(0,0,0,h);
- sky.addColorStop(0,"#101c30");
- sky.addColorStop(1,"#a0b2b9");
- ctx.fillStyle=sky;ctx.fillRect(0,0,W,h);
+ // Обочины
+ ctx.fillStyle="#a39d85";
+ ctx.fillRect(roadLeft()-9,0,roadWidth()+18,H);
 
- // Дальний пейзаж
- ctx.fillStyle="#283c35";
- for(let i=0;i<15;i++){
-  let x=i*W/13;
-  let bh=20+(i*31%48);
-  ctx.fillRect(x,h-bh,W/17,bh);
- }
- ctx.fillStyle="#29412c";
- ctx.fillRect(0,h,W,H-h);
-
- // Дорога
- polygon([[W/2-W*.095,h],[W/2+W*.095,h],
- [W/2+W*.445,H],[W/2-W*.445,H]],"#343a40");
+ // Асфальт
+ ctx.fillStyle="#343a40";
+ ctx.fillRect(roadLeft(),0,roadWidth(),H);
 
  // Края дороги
- let edgeTop=W*.19,edgeBottom=W*.89;
- polygon([[W/2-edgeTop/2,h],[W/2-edgeTop/2-7,h],
- [W/2-edgeBottom/2-18,H],[W/2-edgeBottom/2,H]],"#d8d4c4");
- polygon([[W/2+edgeTop/2,h],[W/2+edgeTop/2+7,h],
- [W/2+edgeBottom/2+18,H],[W/2+edgeBottom/2,H]],"#d8d4c4");
+ ctx.fillStyle="#eee9d8";
+ ctx.fillRect(roadLeft()+3,0,4,H);
+ ctx.fillRect(roadLeft()+roadWidth()-7,0,4,H);
 
- // Движущаяся разметка
+ // Разметка
+ ctx.fillStyle="#f4f0df";
  for(let lane=1;lane<=2;lane++){
-  for(let i=0;i<16;i++){
-   let p=(i/16+roadPhase)%1;
-   let y=h+p*p*(H-h);
-   let rw=roadWidth(y);
-   let x=W/2-rw/2+rw*lane/3;
-   let dash=3+p*39;
-   ctx.fillStyle="#f0eddf";
-   ctx.fillRect(x-1.5-p*1.5,y,3+p*3,dash);
+  for(let i=0;i<12;i++){
+   let y=((i*95+roadPhase*H*1.6)%(H+70))-35;
+   ctx.fillRect(roadLeft()+laneWidth()*lane-2,y,4,48);
   }
  }
 
- // Движущиеся деревья
+ // Деревья вдоль дороги
  for(let side of [-1,1]){
-  for(let i=0;i<11;i++){
-   let p=(i/11+roadPhase*.8)%1;
-   let y=h+p*p*(H-h);
-   let rw=roadWidth(y);
-   let x=W/2+side*(rw/2+12+p*48);
-   let size=5+p*19;
-   ctx.fillStyle="#37613b";
-   ctx.beginPath();ctx.arc(x,y-size*.55,size,0,Math.PI*2);ctx.fill();
-   ctx.fillStyle="#5a432c";
-   ctx.fillRect(x-size*.13,y-size*.15,size*.26,size*.8);
+  for(let i=0;i<10;i++){
+   let y=((i*125+roadPhase*H*1.2)%(H+100))-50;
+   let x=side===-1?roadLeft()-30:roadLeft()+roadWidth()+30;
+   ctx.fillStyle="#315b37";
+   ctx.beginPath();
+   ctx.arc(x,y,13,0,Math.PI*2);
+   ctx.fill();
+   ctx.fillStyle="#5b422b";
+   ctx.fillRect(x-3,y+8,6,15);
   }
  }
 }
 
-function rr(x,y,w,h,r,color){
- ctx.fillStyle=color;ctx.beginPath();
- ctx.roundRect(x,y,w,h,r);ctx.fill();
-}
-
+// Машина, вид строго сверху
 function drawCar(x,y,w,color,isPlayer=false){
- let h=w*1.5;
- ctx.save();ctx.translate(x,y);
+ const h=w*1.75;
+ ctx.save();
+ ctx.translate(x,y);
 
  // Тень
  ctx.fillStyle="#0009";
- ctx.beginPath();ctx.ellipse(0,h*.83,w*.67,h*.13,0,0,Math.PI*2);ctx.fill();
+ ctx.beginPath();
+ ctx.ellipse(0,h*.52,w*.59,h*.49,0,0,Math.PI*2);
+ ctx.fill();
 
  // Колёса
- rr(-w*.52,h*.35,w*.17,h*.42,5,"#080a0d");
- rr(w*.35,h*.35,w*.17,h*.42,5,"#080a0d");
+ rr(-w*.53,h*.20,w*.17,h*.25,4,"#090b0d");
+ rr(w*.36,h*.20,w*.17,h*.25,4,"#090b0d");
+ rr(-w*.53,h*.68,w*.17,h*.25,4,"#090b0d");
+ rr(w*.36,h*.68,w*.17,h*.25,4,"#090b0d");
 
  // Кузов
  let grad=ctx.createLinearGradient(-w/2,0,w/2,0);
- grad.addColorStop(0,"#626d76");
- grad.addColorStop(.18,color);
- grad.addColorStop(.5,"#edf0f1");
- grad.addColorStop(.82,color);
- grad.addColorStop(1,"#69737b");
+ grad.addColorStop(0,"#58636c");
+ grad.addColorStop(.22,color);
+ grad.addColorStop(.5,"#eef1f2");
+ grad.addColorStop(.78,color);
+ grad.addColorStop(1,"#56616a");
+
  ctx.fillStyle=grad;
  ctx.beginPath();
- ctx.moveTo(-w*.36,h*.10);
- ctx.lineTo(w*.36,h*.10);
- ctx.lineTo(w*.47,h*.32);
- ctx.lineTo(w*.52,h*.79);
- ctx.quadraticCurveTo(w*.5,h*.93,w*.35,h*.96);
- ctx.lineTo(-w*.35,h*.96);
- ctx.quadraticCurveTo(-w*.5,h*.93,-w*.52,h*.79);
- ctx.lineTo(-w*.47,h*.32);
- ctx.closePath();ctx.fill();
+ ctx.moveTo(-w*.29,h*.04);
+ ctx.quadraticCurveTo(-w*.42,h*.08,-w*.43,h*.25);
+ ctx.lineTo(-w*.48,h*.73);
+ ctx.quadraticCurveTo(-w*.46,h*.96,-w*.30,h*.99);
+ ctx.lineTo(w*.30,h*.99);
+ ctx.quadraticCurveTo(w*.46,h*.96,w*.48,h*.73);
+ ctx.lineTo(w*.43,h*.25);
+ ctx.quadraticCurveTo(w*.42,h*.08,w*.29,h*.04);
+ ctx.closePath();
+ ctx.fill();
+
+ // Переднее стекло
+ ctx.fillStyle="#172b39";
+ ctx.beginPath();
+ ctx.moveTo(-w*.31,h*.13);
+ ctx.lineTo(w*.31,h*.13);
+ ctx.lineTo(w*.34,h*.35);
+ ctx.lineTo(-w*.34,h*.35);
+ ctx.closePath();
+ ctx.fill();
+
+ // Крыша
+ rr(-w*.34,h*.38,w*.68,h*.30,5,"#8b969d");
+ rr(-w*.29,h*.40,w*.58,h*.25,4,"#243b49");
 
  // Заднее стекло
- polygon([[-w*.33,h*.13],[w*.33,h*.13],
- [w*.39,h*.39],[-w*.39,h*.39]],"#152c3b");
- ctx.strokeStyle="#85939a";ctx.lineWidth=Math.max(1,w*.018);
- ctx.stroke();
+ ctx.fillStyle="#172b39";
+ ctx.beginPath();
+ ctx.moveTo(-w*.34,h*.71);
+ ctx.lineTo(w*.34,h*.71);
+ ctx.lineTo(w*.30,h*.87);
+ ctx.lineTo(-w*.30,h*.87);
+ ctx.closePath();
+ ctx.fill();
 
- // Стоп-сигнал на спойлере
- rr(-w*.4,h*.095,w*.8,h*.035,2,"#4e5a62");
- rr(-w*.13,h*.105,w*.26,h*.018,1,"#ed3338");
-
- // Крышка багажника
- rr(-w*.39,h*.43,w*.78,h*.28,4,grad);
-
- // Opel эмблема
- ctx.strokeStyle="#e5e9eb";ctx.lineWidth=Math.max(1,w*.023);
- ctx.beginPath();ctx.arc(0,h*.55,w*.062,0,Math.PI*2);ctx.stroke();
- ctx.beginPath();ctx.moveTo(-w*.095,h*.55);ctx.lineTo(w*.095,h*.55);ctx.stroke();
+ // Фары спереди
+ rr(-w*.36,h*.055,w*.20,h*.045,3,"#fff3c6");
+ rr(w*.16,h*.055,w*.20,h*.045,3,"#fff3c6");
 
  // Задние фонари
- rr(-w*.47,h*.40,w*.19,h*.24,5,"#8c1820");
- rr(w*.28,h*.40,w*.19,h*.24,5,"#8c1820");
- rr(-w*.44,h*.43,w*.12,h*.13,3,"#ff303a");
- rr(w*.32,h*.43,w*.12,h*.13,3,"#ff303a");
- rr(-w*.44,h*.58,w*.12,h*.035,2,"#f7e4ce");
- rr(w*.32,h*.58,w*.12,h*.035,2,"#f7e4ce");
+ rr(-w*.40,h*.91,w*.18,h*.055,3,"#fa2837");
+ rr(w*.22,h*.91,w*.18,h*.055,3,"#fa2837");
 
- // Номер
- rr(-w*.23,h*.70,w*.46,h*.11,3,"#f5f3e9");
- ctx.fillStyle="#111";
- ctx.font=`bold ${Math.max(5,w*.073)}px Arial`;
- ctx.textAlign="center";
- ctx.fillText(isPlayer?"А666АА66":"OPEL",0,h*.778);
+ // Эмблема Opel
+ ctx.strokeStyle="#e8edf0";
+ ctx.lineWidth=Math.max(1,w*.025);
+ ctx.beginPath();
+ ctx.arc(0,h*.52,w*.065,0,Math.PI*2);
+ ctx.stroke();
+ ctx.beginPath();
+ ctx.moveTo(-w*.10,h*.52);
+ ctx.lineTo(w*.10,h*.52);
+ ctx.stroke();
 
- // Бампер и выхлоп
- ctx.strokeStyle="#59636b";ctx.lineWidth=Math.max(1,w*.025);
- ctx.beginPath();ctx.moveTo(-w*.42,h*.85);ctx.lineTo(w*.42,h*.85);ctx.stroke();
- rr(-w*.34,h*.89,w*.14,h*.045,3,"#20272c");
- rr(w*.20,h*.89,w*.14,h*.045,3,"#20272c");
+ // Номер на машине игрока
+ if(isPlayer){
+  rr(-w*.25,h*.85,w*.5,h*.075,2,"#f5f3e9");
+  ctx.fillStyle="#111";
+  ctx.font=`bold ${Math.max(6,w*.075)}px Arial`;
+  ctx.textAlign="center";
+  ctx.fillText("А666АА66",0,h*.905);
+ }
 
  ctx.restore();
 }
@@ -238,28 +247,25 @@ function drawCar(x,y,w,color,isPlayer=false){
 function draw(){
  ctx.clearRect(0,0,W,H);
  drawRoad();
+
+ // Другие машины
  for(const car of traffic){
-  let y=roadTop()+car.p*(H-roadTop());
-  let w=roadWidth(y)*.105;
-  drawCar(laneX(car.lane,y),y,w,car.color,false);
+  let y=car.y;
+  let w=Math.min(laneWidth()*.57,65);
+  drawCar(laneX(car.lane),y,w,car.color,false);
  }
 
- // Плавное движение автомобиля влево и вправо
-const playerY=H-30;
-const playerW=Math.min(W*.48, roadWidth(H)*.32);
+ // Opel игрока
+ const playerW=Math.min(W*.23,85);
+ const playerY=H*.76;
  drawCar(playerX,playerY,playerW,"#b9c2c9",true);
-
- // Свет фар впереди и лёгкая вибрация кузова
- const glow=ctx.createRadialGradient(playerX,H-30,5,playerX,H-30,playerW*1.4);
- glow.addColorStop(0,"#ffffff15");
- glow.addColorStop(1,"#ffffff00");
- ctx.fillStyle=glow;ctx.fillRect(0,H*.55,W,H*.45);
 }
 
 function spawnTraffic(){
  let lane=Math.floor(Math.random()*3);
  traffic.push({
-  lane,p:0,
+  lane,
+  y:-120,
   color:["#c52f36","#e4e6e8","#202b38","#c39a43","#28639a"][Math.floor(Math.random()*5)]
  });
 }
@@ -268,32 +274,44 @@ function update(dt){
  if(!running||paused)return;
 
  speed=Math.min(220,speed+dt*2.4);
- distance+=speed*dt;
  roadPhase=(roadPhase+dt*(.13+speed*.0018))%1;
 
- // Плавное движение машины
  playerX+=(targetX-playerX)*Math.min(1,dt*7);
- playerX=Math.max(W/2-roadWidth(H)*.43,
- Math.min(W/2+roadWidth(H)*.43,playerX));
 
- score+=Math.floor(speed*dt*.04);
+ const playerW=Math.min(W*.23,85);
+ const halfRoad=roadWidth()/2;
+ playerX=Math.max(roadLeft()+playerW*.58,
+ Math.min(roadLeft()+roadWidth()-playerW*.58,playerX));
+
  spawnTimer+=dt;
-
  if(spawnTimer>Math.max(.55,1.65-speed/230)){
-  spawnTraffic();spawnTimer=0;
+  spawnTraffic();
+  spawnTimer=0;
  }
+
+ const playerY=H*.76;
+ const carH=playerW*1.75;
 
  traffic.forEach(car=>{
-  car.p+=dt*(.12+speed*.0017);
+  car.y+=dt*(180+speed*1.8);
  });
- traffic=traffic.filter(car=>car.p<1.15);
+ traffic=traffic.filter(car=>car.y<H+150);
 
+ // Проверка столкновения
  for(const car of traffic){
-  if(Math.abs(car.p-.91)<.055 &&
-  Math.abs(laneX(car.lane,H)-playerX)<roadWidth(H)*.12){
-   endGame();return;
+  let otherW=Math.min(laneWidth()*.57,65);
+  let otherH=otherW*1.75;
+  let dx=Math.abs(laneX(car.lane)-playerX);
+  let dy=Math.abs(car.y-playerY);
+
+  if(dx<(playerW+otherW)*.38 &&
+     dy<(carH+otherH)*.40){
+   endGame();
+   return;
   }
  }
+
+ score+=Math.floor(speed*dt*.04);
 
  document.getElementById("speed").textContent=Math.round(speed);
  document.getElementById("score").textContent=score;
@@ -302,32 +320,43 @@ function update(dt){
 function loop(time){
  let dt=Math.min((time-lastTime)/1000||0,.04);
  lastTime=time;
- update(dt);draw();
+ update(dt);
+ draw();
  requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);
 
 function startGame(){
- traffic=[];score=0;speed=30;distance=0;
- roadPhase=0;spawnTimer=0;
- playerX=W/2;targetX=W/2;
- running=true;paused=false;
+ traffic=[];
+ score=0;
+ speed=30;
+ roadPhase=0;
+ spawnTimer=0;
+ playerX=W/2;
+ targetX=W/2;
+ running=true;
+ paused=false;
  lastTime=performance.now();
+
  document.getElementById("overlay").classList.add("hidden");
  document.getElementById("pause").textContent="Ⅱ ПАУЗА";
+
  if(soundOn)startMusic();
 }
 
 function endGame(){
  running=false;
+
  if(score>record){
   record=score;
   localStorage.setItem("opelRecord",record);
   document.getElementById("record").textContent=record;
  }
+
  document.getElementById("message").innerHTML=
  "ЗАЕЗД ОКОНЧЕН<br><br>Очки: "+score+
  "<br>Скорость: "+Math.round(speed)+" км/ч";
+
  document.getElementById("start").textContent="ЕЩЁ ОДИН ЗАЕЗД";
  document.getElementById("overlay").classList.remove("hidden");
  stopMusic();
@@ -345,47 +374,73 @@ document.getElementById("pause").onclick=()=>{
  paused?"▶ ПРОДОЛЖИТЬ":"Ⅱ ПАУЗА";
 };
 
-// Сенсор: касание половины экрана задаёт направление
-function steer(x){
+// Управление стрелками
+function moveLeft(){
  if(!running||paused)return;
- const step=roadWidth(H)*.29;
- targetX=Math.max(W/2-roadWidth(H)*.39,
- Math.min(W/2+roadWidth(H)*.39,
- targetX+(x<W/2?-step:step)));
+ targetX-=laneWidth()*.75;
+ targetX=Math.max(roadLeft()+45,targetX);
 }
-canvas.addEventListener("pointerdown",e=>steer(e.clientX));
-canvas.addEventListener("pointermove",e=>{
- if(e.pointerType==="touch"||e.buttons) {
-  if(e.clientX<W*.35)targetX=Math.max(W/2-roadWidth(H)*.39,targetX-3);
-  if(e.clientX>W*.65)targetX=Math.min(W/2+roadWidth(H)*.39,targetX+3);
- }
+function moveRight(){
+ if(!running||paused)return;
+ targetX+=laneWidth()*.75;
+ targetX=Math.min(roadLeft()+roadWidth()-45,targetX);
+}
+
+document.getElementById("left").addEventListener("pointerdown",e=>{
+ e.preventDefault();
+ moveLeft();
 });
-canvas.addEventListener("contextmenu",e=>e.preventDefault());
+document.getElementById("right").addEventListener("pointerdown",e=>{
+ e.preventDefault();
+ moveRight();
+});
+
+// Клавиатура
+addEventListener("keydown",e=>{
+ if(e.key==="ArrowLeft"||e.key==="a")moveLeft();
+ if(e.key==="ArrowRight"||e.key==="d")moveRight();
+});
 
 // Оригинальная мелодия
 function startMusic(){
  if(!audio)audio=new(window.AudioContext||window.webkitAudioContext)();
- audio.resume();stopMusic();
+ audio.resume();
+ stopMusic();
+
  const notes=[220,261.63,329.63,293.66,246.94,293.66,349.23,329.63];
  let i=0;
+
  musicTimer=setInterval(()=>{
   if(!soundOn||!running||paused)return;
-  let osc=audio.createOscillator(),gain=audio.createGain();
-  osc.type="sine";osc.frequency.value=notes[i++%notes.length];
+
+  let osc=audio.createOscillator();
+  let gain=audio.createGain();
+
+  osc.type="sine";
+  osc.frequency.value=notes[i++%notes.length];
   gain.gain.setValueAtTime(.0001,audio.currentTime);
   gain.gain.exponentialRampToValueAtTime(.035,audio.currentTime+.08);
   gain.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+.55);
-  osc.connect(gain);gain.connect(audio.destination);
-  osc.start();osc.stop(audio.currentTime+.6);
+
+  osc.connect(gain);
+  gain.connect(audio.destination);
+  osc.start();
+  osc.stop(audio.currentTime+.6);
  },500);
 }
+
 function stopMusic(){
- if(musicTimer){clearInterval(musicTimer);musicTimer=null;}
+ if(musicTimer){
+  clearInterval(musicTimer);
+  musicTimer=null;
+ }
 }
+
 document.getElementById("sound").onclick=()=>{
  soundOn=!soundOn;
  document.getElementById("sound").textContent=
  soundOn?"♫ ЗВУК: ВКЛ":"♫ ЗВУК: ВЫКЛ";
+
  if(soundOn&&running&&!paused)startMusic();
  else stopMusic();
 };
