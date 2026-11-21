@@ -93,92 +93,153 @@ function roundRect(x,y,w,h,r,color){
 
 // Рисуем Opel Astra H GTC
 function drawOpel(x,y,s,player=true){
- ctx.save();
- ctx.translate(x,y);
- ctx.scale(s,s);
+ctx.save();
+ctx.translate(x,y);
+ctx.scale(s,s);
 
- // Тень
- ctx.fillStyle="#0008";
- ctx.beginPath();
- ctx.ellipse(0,5,31,56,0,0,Math.PI*2);
- ctx.fill();
+// Тень кузова
+ctx.shadowColor="#0009";
+ctx.shadowBlur=12;
+ctx.shadowOffsetY=5;
 
- // Колёса
- ctx.fillStyle="#090909";
- ctx.fillRect(-30,-38,10,29);
- ctx.fillRect(20,-38,10,29);
- ctx.fillRect(-30,14,10,29);
- ctx.fillRect(20,14,10,29);
+// Спортивный кузов GTC
+let body=ctx.createLinearGradient(-27,0,27,0);
+body.addColorStop(0,"#555b61");
+body.addColorStop(.22,"#c3c9ce");
+body.addColorStop(.5,"#f0f1f2");
+body.addColorStop(.78,"#a1a8ae");
+body.addColorStop(1,"#42484e");
 
- // Диски
- for(let yy of [-24,28]){
-  for(let xx of [-25,25]){
-   ctx.fillStyle="#aab0b5";
-   ctx.beginPath();ctx.arc(xx,yy,4,0,Math.PI*2);ctx.fill();
+ctx.fillStyle=body;
+ctx.beginPath();
+ctx.moveTo(-15,-57);
+ctx.quadraticCurveTo(-25,-55,-25,-40);
+ctx.lineTo(-27,30);
+ctx.quadraticCurveTo(-25,48,-17,54);
+ctx.lineTo(17,54);
+ctx.quadraticCurveTo(25,48,27,30);
+ctx.lineTo(25,-40);
+ctx.quadraticCurveTo(25,-55,15,-57);
+ctx.closePath();
+ctx.fill();
+
+ctx.shadowBlur=0;
+ctx.shadowOffsetY=0;
+
+// Капот
+let hood=ctx.createLinearGradient(-20,0,20,0);
+hood.addColorStop(0,"#777e84");
+hood.addColorStop(.5,"#e8ecef");
+hood.addColorStop(1,"#777e84");
+ctx.fillStyle=hood;
+ctx.beginPath();
+ctx.moveTo(-20,-51);
+ctx.lineTo(20,-51);
+ctx.lineTo(22,-22);
+ctx.lineTo(-22,-22);
+ctx.closePath();
+ctx.fill();
+
+// Рельеф капота
+ctx.strokeStyle="#ffffff90";
+ctx.lineWidth=1;
+ctx.beginPath();
+ctx.moveTo(-13,-48);ctx.lineTo(-12,-24);
+ctx.moveTo(13,-48);ctx.lineTo(12,-24);
+ctx.stroke();
+
+// Панорамное лобовое стекло
+let glass=ctx.createLinearGradient(-15,0,15,0);
+glass.addColorStop(0,"#152633");
+glass.addColorStop(.5,"#496779");
+glass.addColorStop(1,"#152633");
+ctx.fillStyle=glass;
+ctx.beginPath();
+ctx.moveTo(-19,-20);
+ctx.lineTo(19,-20);
+ctx.lineTo(15,1);
+ctx.lineTo(-15,1);
+ctx.closePath();
+ctx.fill();
+
+// Блики стекла
+ctx.strokeStyle="#b9d9e899";
+ctx.lineWidth=1.5;
+ctx.beginPath();
+ctx.moveTo(-14,-17);ctx.lineTo(-11,-3);
+ctx.stroke();
+
+// Крыша
+ctx.fillStyle="#737c83";
+ctx.fillRect(-16,2,32,22);
+
+// Заднее стекло
+ctx.fillStyle="#172b39";
+ctx.beginPath();
+ctx.moveTo(-15,25);
+ctx.lineTo(15,25);
+ctx.lineTo(19,40);
+ctx.lineTo(-19,40);
+ctx.closePath();
+ctx.fill();
+
+// Боковые зеркала
+roundRect(-30,-25,8,13,3,"#aeb6bd");
+roundRect(22,-25,8,13,3,"#aeb6bd");
+
+// Спортивные диски и колёса
+for(let yy of [-37,32]){
+for(let xx of [-25,25]){
+roundRect(xx-5,yy-12,10,25,3,"#111");
+
+  ctx.fillStyle="#aeb5bb";
+  ctx.beginPath();
+  ctx.arc(xx,yy,4,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.strokeStyle="#e5e5e5";
+  ctx.lineWidth=1;
+  for(let a=0;a<5;a++){
+    let angle=a*Math.PI*2/5;
+    ctx.beginPath();
+    ctx.moveTo(xx,yy);
+    ctx.lineTo(xx+3*Math.cos(angle),yy+3*Math.sin(angle));
+    ctx.stroke();
   }
- }
+}
+}
 
- // Кузов спортивной трёхдверки
- let body=ctx.createLinearGradient(-30,0,30,0);
- body.addColorStop(0,"#555b61");
- body.addColorStop(.3,"#dce0e3");
- body.addColorStop(.65,"#92999f");
- body.addColorStop(1,"#353b41");
- roundRect(-23,-53,46,106,12,body);
+// Передние фары
+roundRect(-22,-55,13,7,3,"#e9f5ff");
+roundRect(9,-55,13,7,3,"#e9f5ff");
 
- // Капот
- ctx.fillStyle="#c5cbd0";
- ctx.beginPath();
- ctx.moveTo(-19,-49);ctx.lineTo(19,-49);
- ctx.lineTo(22,-25);ctx.lineTo(-22,-25);
- ctx.fill();
+// Задние фонари
+roundRect(-22,47,12,6,2,"#ed1010");
+roundRect(10,47,12,6,2,"#ed1010");
 
- // Крыша и стёкла
- ctx.fillStyle="#172a38";
- ctx.beginPath();
- ctx.
-moveTo(-18,-23);ctx.lineTo(18,-23);
- ctx.lineTo(15,20);ctx.lineTo(-15,20);
- ctx.closePath();ctx.fill();
+// Передняя решётка
+roundRect(-9,-54,18,5,2,"#222");
+ctx.strokeStyle="#dce0e3";
+ctx.lineWidth=1;
+ctx.beginPath();
+ctx.arc(0,-52,2.5,0,Math.PI*2);
+ctx.stroke();
 
- // Блики на стекле
- ctx.strokeStyle="#9ab3c5";
- ctx.lineWidth=1.5;
- ctx.beginPath();
- ctx.moveTo(-14,-18);ctx.lineTo(-10,12);
- ctx.stroke();
+// Номер
+ctx.fillStyle="#fff";
+ctx.fillRect(-17,-45,34,7);
+ctx.fillStyle="#111";
+ctx.font="bold 5px Arial";
+ctx.textAlign="center";
+ctx.fillText("А666АА66",0,-40);
 
- // Боковые контуры
- ctx.strokeStyle="#555";
- ctx.lineWidth=1;
- ctx.beginPath();ctx.moveTo(-21,-20);ctx.lineTo(-21,30);
- ctx.moveTo(21,-20);ctx.lineTo(21,30);
- ctx.stroke();
+ctx.fillStyle="#fff";
+ctx.fillRect(-17,43,34,6);
+ctx.fillStyle="#111";
+ctx.font="bold 5px Arial";
+ctx.fillText("А666АА66",0,48);
 
- // Передние фары
- roundRect(-20,-50,12,7,3,"#f4f4e5");
- roundRect(8,-50,12,7,3,"#f4f4e5");
-
- // Решётка Opel
- ctx.fillStyle="#17191a";
- ctx.fillRect(-10,-43,20,5);
- ctx.strokeStyle="#ddd";
- ctx.lineWidth=1;
- ctx.beginPath();ctx.arc(0,-40,3,0,Math.PI*2);ctx.stroke();
-
- // Задние фонари
- roundRect(-20,43,11,6,2,"#f01818");
- roundRect(9,43,11,6,2,"#f01818");
-
- // Номер
- ctx.fillStyle="white";
- ctx.fillRect(-18,-34,36,9);
- ctx.fillStyle="#111";
- ctx.font="bold 5px Arial";
- ctx.textAlign="center";
- ctx.fillText("А666АА66",0,-28);
-
- ctx.restore();
+ctx.restore();
 }
 
 function drawTrafficCar(car){
