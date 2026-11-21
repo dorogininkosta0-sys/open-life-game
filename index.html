@@ -1,4 +1,50 @@
-) {
+fillStyle = "#fff";
+  ctx.font = "bold 15px Arial";
+  ctx.fillText(Math.round(speed) + " KM/H", W - 15, 35);
+  ctx.font = "13px Arial";
+  ctx.fillText("СЧЁТ: " + score, W - 15, 57);
+  ctx.textAlign = "left";
+}
+
+function spawnEnemy() {
+  const lane = Math.floor(Math.random() * 3);
+
+  traffic.push({
+    x: laneX(lane),
+    y: -100,
+    speed: 0.65 + Math.random() * 0.3
+  });
+}
+
+function update(dt) {
+  if (gameOver) return;
+
+  const rw = roadWidth();
+  const left = (W - rw) / 2;
+
+  targetX = Math.max(left + 45, targetX);
+  targetX = Math.min(left + rw - 45, targetX);
+
+  playerX += (targetX - playerX) * Math.min(1, dt * 8);
+
+  distance += dt * speed / 3600;
+  score = Math.floor(distance * 100);
+  speed = Math.min(220, speed + dt * 1.3);
+
+  spawnTimer += dt;
+
+  if (spawnTimer > 1.5) {
+    spawnEnemy();
+    spawnTimer = 0;
+  }
+
+  traffic.forEach(car => {
+    car.y += speed * dt * car.speed;
+
+    const hitX = Math.abs(car.x - playerX) < 42;
+    const hitY = Math.abs(car.y - (H - 125)) < 65;
+
+    if (hitX && hitY) {
       gameOver = true;
     }
   });
@@ -18,84 +64,76 @@ function draw() {
   drawCar(playerX, H - 125, 1, false);
   drawHUD();
 
-  if (paused || gameOver) {
-    ctx.fillStyle = "rgba(0,0,0,0.72)";
+  if (gameOver) {
+    ctx.fillStyle = "rgba(0,0,0,0.75)";
     ctx.fillRect(0, 0, W, H);
 
     ctx.textAlign = "center";
     ctx.fillStyle = "#ffc928";
-    ctx.font = "bold 30px Arial";
-    ctx.fillText(
-      gameOver ? "АВАРИЯ!" : "ПАУЗА",
-      W / 2,
-      H / 2 - 15
-    );
+    ctx.font = "bold 32px Arial";
+    ctx.fillText("АВАРИЯ!", W / 2, H / 2 - 20);
 
     ctx.fillStyle = "#fff";
-    ctx.font = "18px Arial";
-    ctx.fillText(
-      gameOver ? "Нажми, чтобы начать заново" : "Нажми, чтобы продолжить",
-      W / 2,
-      H / 2 + 25
-    );
+    ctx.font = "17px Arial";
+    ctx.fillText("Нажми, чтобы начать заново", W / 2, H / 2 + 25);
 
     ctx.textAlign = "left";
   }
 }
 
-function loop(time) {
-  const dt = Math.min((time - lastTime) / 1000 || 0, 0.04);
-  lastTime = time;
-
-  update(dt);
-  draw();
-
-  requestAnimationFrame(loop);
-}
-
 function restart() {
   traffic = [];
-  distance = 0;
   score = 0;
-  speed = 142;
+  distance = 0;
+  speed = 140;
   spawnTimer = 0;
+  roadOffset = 0;
   gameOver = false;
-  paused = false;
-  targetX = W / 2;
-  playerX = W / 2;
+  playerX = laneX(1);
+  targetX = playerX;
 }
 
 function steer(e) {
-  const x = e.clientX;
-
   if (gameOver) {
     restart();
     return;
   }
 
-  if (paused) {
-    paused = false;
-    return;
+  if (e.clientX < W / 2) {
+    targetX = laneX(0);
+  } else {
+    targetX = laneX(2);
   }
-
-  targetX += x < W / 2 ? -W * 0.22 : W * 0.22;
 }
 
 canvas.addEventListener("pointerdown", steer);
 
 window.addEventListener("keydown", e => {
   if (e.key === "ArrowLeft" || e.key === "a") {
-    targetX -= 45;
+    targetX = laneX(0);
   }
 
   if (e.key === "ArrowRight" || e.key === "d") {
-    targetX += 45;
+    targetX = laneX(2);
   }
 
-  if (e.key === "Escape") {
-    paused = !paused;
+  if (gameOver && e.key === "Enter") {
+    restart();
   }
 });
+
+function loop(time) {
+  let dt = (time - lastTime) / 1000;
+
+  if (dt > 0.04) dt = 0.04;
+  if (dt < 0) dt = 0;
+
+  lastTime = time;
+
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
 
 requestAnimationFrame(loop);
 </script>
