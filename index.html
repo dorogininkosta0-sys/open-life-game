@@ -1,140 +1,410 @@
-fillStyle = "#fff";
-  ctx.font = "bold 15px Arial";
-  ctx.fillText(Math.round(speed) + " KM/H", W - 15, 35);
-  ctx.font = "13px Arial";
-  ctx.fillText("СЧЁТ: " + score, W - 15, 57);
-  ctx.textAlign = "left";
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>OPEL LIFE RACING 2.0</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;overflow:hidden;background:#101010;font-family:Arial,sans-serif;touch-action:none}
+canvas{display:block;width:100vw;height:100dvh}
+#hud{position:absolute;top:15px;left:15px;color:white;text-shadow:0 2px 5px #000;font-weight:bold;pointer-events:none}
+.logo{font-size:19px;letter-spacing:2px;color:#fff}
+.info{margin-top:7px;font-size:15px}
+#pause{position:absolute;right:15px;top:15px;color:white;background:#ffffff25;border:1px solid #ffffff80;border-radius:12px;padding:12px 17px;font-size:20px}
+.controls{position:absolute;bottom:25px;left:0;width:100%;display:flex;justify-content:space-between;padding:0 20px;pointer-events:none}
+.arrow{width:95px;height:95px;border:3px solid #ffffff85;border-radius:25px;background:#ffffff18;color:#ffffffc9;font-size:52px;display:flex;align-items:center;justify-content:center;pointer-events:auto;touch-action:none;user-select:none;backdrop-filter:blur(3px)}
+.arrow:active{background:#ffffff45}
+#overlay{position:absolute;inset:0;background:#000c;color:white;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+#overlay h1{font-size:35px;letter-spacing:2px}
+#overlay p{font-size:18px}
+#overlay button{background:#d71920;color:white;border:0;border-radius:13px;padding:16px 28px;font-size:19px;font-weight:bold}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+
+<canvas id="game"></canvas>
+
+<div id="hud">
+  <div class="logo">OPEL LIFE RACING</div>
+  <div class="info">⚡ <span id="speed">30</span> км/ч</div>
+  <div class="info">🏁 Счёт: <span id="score">0</span></div>
+  <div class="info">🏆 Рекорд: <span id="record">0</span></div>
+</div>
+
+<button id="pause">Ⅱ</button>
+
+<div class="controls">
+  <div class="arrow" id="left">⬅</div>
+  <div class="arrow" id="right">➡</div>
+</div>
+
+<div id="overlay">
+  <h1>OPEL LIFE<br>RACING 2.0</h1>
+  <p>Твоя Astra GTC ждёт! 🚗</p>
+  <p>А666АА66</p>
+  <button id="start">НАЧАТЬ ГОНКУ</button>
+</div>
+
+<script>
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
+
+let W,H,dpr;
+let playerX=0;
+let traffic=[];
+let particles=[];
+let score=0;
+let speed=30;
+let targetSpeed=30;
+let roadOffset=0;
+let spawnTimer=0;
+let lastTime=0;
+let running=false;
+let paused=false;
+let gameOver=false;
+let left=false,right=false;
+let record=Number(localStorage.getItem("opelRecord")||0);
+
+document.getElementById("record").textContent=record;
+
+function resize(){
+ dpr=Math.min(devicePixelRatio||1,2);
+ W=innerWidth;H=innerHeight;
+ canvas.width=W*dpr;canvas.height=H*dpr;
+ ctx.setTransform(dpr,0,0,dpr,0,0);
+ playerX=playerX||W/2;
+}
+addEventListener("resize",resize);
+resize();
+
+function bounds(){
+ let rw=Math.min(W*.84,500);
+ return {l:(W-rw)/2,r:(W+rw)/2,w:rw};
 }
 
-function spawnEnemy() {
-  const lane = Math.floor(Math.random() * 3);
-
-  traffic.push({
-    x: laneX(lane),
-    y: -100,
-    speed: 0.65 + Math.random() * 0.3
-  });
+function roundRect(x,y,w,h,r,color){
+ ctx.fillStyle=color;
+ ctx.beginPath();
+ ctx.roundRect(x,y,w,h,r);
+ ctx.fill();
 }
 
-function update(dt) {
-  if (gameOver) return;
+// Рисуем Opel Astra H GTC
+function drawOpel(x,y,s,player=true){
+ ctx.save();
+ ctx.translate(x,y);
+ ctx.scale(s,s);
 
-  const rw = roadWidth();
-  const left = (W - rw) / 2;
+ // Тень
+ ctx.fillStyle="#0008";
+ ctx.beginPath();
+ ctx.ellipse(0,5,31,56,0,0,Math.PI*2);
+ ctx.fill();
 
-  targetX = Math.max(left + 45, targetX);
-  targetX = Math.min(left + rw - 45, targetX);
+ // Колёса
+ ctx.fillStyle="#090909";
+ ctx.fillRect(-30,-38,10,29);
+ ctx.fillRect(20,-38,10,29);
+ ctx.fillRect(-30,14,10,29);
+ ctx.fillRect(20,14,10,29);
 
-  playerX += (targetX - playerX) * Math.min(1, dt * 8);
-
-  distance += dt * speed / 3600;
-  score = Math.floor(distance * 100);
-  speed = Math.min(220, speed + dt * 1.3);
-
-  spawnTimer += dt;
-
-  if (spawnTimer > 1.5) {
-    spawnEnemy();
-    spawnTimer = 0;
+ // Диски
+ for(let yy of [-24,28]){
+  for(let xx of [-25,25]){
+   ctx.fillStyle="#aab0b5";
+   ctx.beginPath();ctx.arc(xx,yy,4,0,Math.PI*2);ctx.fill();
   }
+ }
 
-  traffic.forEach(car => {
-    car.y += speed * dt * car.speed;
+ // Кузов спортивной трёхдверки
+ let body=ctx.createLinearGradient(-30,0,30,0);
+ body.addColorStop(0,"#555b61");
+ body.addColorStop(.3,"#dce0e3");
+ body.addColorStop(.65,"#92999f");
+ body.addColorStop(1,"#353b41");
+ roundRect(-23,-53,46,106,12,body);
 
-    const hitX = Math.abs(car.x - playerX) < 42;
-    const hitY = Math.abs(car.y - (H - 125)) < 65;
+ // Капот
+ ctx.fillStyle="#c5cbd0";
+ ctx.beginPath();
+ ctx.moveTo(-19,-49);ctx.lineTo(19,-49);
+ ctx.lineTo(22,-25);ctx.lineTo(-22,-25);
+ ctx.fill();
 
-    if (hitX && hitY) {
-      gameOver = true;
-    }
-  });
+ // Крыша и стёкла
+ ctx.fillStyle="#172a38";
+ ctx.beginPath();
+ ctx.
+moveTo(-18,-23);ctx.lineTo(18,-23);
+ ctx.lineTo(15,20);ctx.lineTo(-15,20);
+ ctx.closePath();ctx.fill();
 
-  traffic = traffic.filter(car => car.y < H + 100);
+ // Блики на стекле
+ ctx.strokeStyle="#9ab3c5";
+ ctx.lineWidth=1.5;
+ ctx.beginPath();
+ ctx.moveTo(-14,-18);ctx.lineTo(-10,12);
+ ctx.stroke();
+
+ // Боковые контуры
+ ctx.strokeStyle="#555";
+ ctx.lineWidth=1;
+ ctx.beginPath();ctx.moveTo(-21,-20);ctx.lineTo(-21,30);
+ ctx.moveTo(21,-20);ctx.lineTo(21,30);
+ ctx.stroke();
+
+ // Передние фары
+ roundRect(-20,-50,12,7,3,"#f4f4e5");
+ roundRect(8,-50,12,7,3,"#f4f4e5");
+
+ // Решётка Opel
+ ctx.fillStyle="#17191a";
+ ctx.fillRect(-10,-43,20,5);
+ ctx.strokeStyle="#ddd";
+ ctx.lineWidth=1;
+ ctx.beginPath();ctx.arc(0,-40,3,0,Math.PI*2);ctx.stroke();
+
+ // Задние фонари
+ roundRect(-20,43,11,6,2,"#f01818");
+ roundRect(9,43,11,6,2,"#f01818");
+
+ // Номер
+ ctx.fillStyle="white";
+ ctx.fillRect(-18,-34,36,9);
+ ctx.fillStyle="#111";
+ ctx.font="bold 5px Arial";
+ ctx.textAlign="center";
+ ctx.fillText("А666АА66",0,-28);
+
+ ctx.restore();
 }
 
-function draw() {
-  ctx.clearRect(0, 0, W, H);
+function drawTrafficCar(car){
+ ctx.save();
+ ctx.translate(car.x,car.y);
+ ctx.scale(car.scale,car.scale);
 
-  drawRoad(0);
+ ctx.fillStyle="#080808";
+ ctx.fillRect(-24,-34,8,22);
+ ctx.fillRect(16,-34,8,22);
+ ctx.fillRect(-24,14,8,22);
+ ctx.fillRect(16,14,8,22);
 
-  traffic.forEach(car => {
-    drawCar(car.x, car.y, 0.8, true);
-  });
+ let g=ctx.createLinearGradient(-20,0,20,0);
+ g.addColorStop(0,car.color);
+ g.addColorStop(.5,"#eeeeee");
+ g.addColorStop(1,car.color);
+ roundRect(-19,-43,38,86,8,g);
 
-  drawCar(playerX, H - 125, 1, false);
-  drawHUD();
+ roundRect(-14,-25,28,27,5,"#243e50");
+ roundRect(-14,13,28,13,3,"#253d4d");
 
-  if (paused || gameOver) {
-    ctx.fillStyle = "rgba(0,0,0,0.75)";
-    ctx.fillRect(0, 0, W, H);
+ roundRect(-16,-41,9,5,2,"#fff5ce");
+ roundRect(7,-41,9,5,2,"#fff5ce");
+ roundRect(-16,36,9,5,2,"#ff2020");
+ roundRect(7,36,9,5,2,"#ff2020");
 
-    ctx.textAlign = "center";
-    ctx.fillStyle = "#ffc928";
-    ctx.font = "bold 32px Arial";
-    ctx.fillText("АВАРИЯ!", W / 2, H / 2 - 20);
-
-    ctx.fillStyle = "#fff";
-    ctx.font = "17px Arial";
-    ctx.fillText("Нажми, чтобы начать заново", W / 2, H / 2 + 25);
-
-    ctx.textAlign = "left";
-  }
+ ctx.restore();
 }
 
-function restart() {
-  traffic = [];
-  score = 0;
-  distance = 0;
-  speed = 140;
-  spawnTimer = 0;
-  roadOffset = 0;
-  gameOver = false;
-  playerX = laneX(1);
-  targetX = playerX;
+function drawBackground(){
+ ctx.fillStyle="#28552a";
+ ctx.fillRect(0,0,W,H);
+
+ let b=bounds();
+ ctx.fillStyle="#292d32";
+ ctx.fillRect(b.l,0,b.w,H);
+
+ // Обочина
+ ctx.fillStyle="#b7b7b7";
+ ctx.fillRect(b.l-8,0,8,H);
+ ctx.fillRect(b.r,0,8,H);
+
+ // Дорожные линии
+ roadOffset+=speed*.035;
+ if(roadOffset>90)roadOffset=0;
+
+ ctx.fillStyle="#eee";
+ for(let y=-90+roadOffset;y<H;y+=90){
+  ctx.fillRect(W/2-3,y,6,43);
+ }
+
+ // Деревья
+ for(let y=-50+((roadOffset*2)%140);y<H;y+=140){
+  drawTree(b.l-35,y);
+  drawTree(b.r+35,y);
+ }
 }
 
-function steer(e) {
-  if (gameOver) {
-    restart();
-    return;
-  }
-
-  if (e.clientX < W / 2) {
-    targetX = laneX(0);
-  } else {
-    targetX = laneX(2);
-  }
+function drawTree(x,y){
+ ctx.fillStyle="#60472e";
+ ctx.fillRect(x-3,y,6,20);
+ ctx.fillStyle="#164d24";
+ ctx.beginPath();ctx.arc(x,y,15,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle="#287039";
+ ctx.beginPath();ctx.arc(x-5,y-5,9,0,Math.PI*2);ctx.fill();
 }
 
-canvas.addEventListener("pointerdown", steer);
+function spawnTraffic(){
+ let b=bounds();
+ let lane=b.w/3;
+ let index=Math.floor(Math.random()*3);
+ let colors=["#1875bc","#c52525","#e1e1e1","#202020","#d5a52c"];
+ traffic.push({
+  x:b.l+lane*(index+.5),
+  y:-100,
+  scale:.85,
+  color:colors[Math.floor(Math.random()*colors.length)],
+  factor:.65+Math.random()*.3
+ });
+}
 
-window.addEventListener("keydown", e => {
-  if (e.key === "ArrowLeft" || e.key === "a") {
-    targetX = laneX(0);
-  }
+function update(dt){
+ if(!running||paused||gameOver)return;
 
-  if (e.key === "ArrowRight" || e.key === "d") {
-    targetX = laneX(2);
-  }
+ let step=dt/16.67;
+ let b=bounds();
 
-  if (gameOver && e.key === "Enter") {
-    restart();
+ // Плавное ускорение
+ targetSpeed=Math.min(220,30+score*.045);
+ speed+=(targetSpeed-speed)*.0008*dt;
+
+ let movement=4.8+speed*.018;
+ if(left)playerX-=movement*step;
+ if(right)playerX+=movement*step;
+
+ playerX=Math.max(b.l+35,Math.min(b.r-35,playerX));
+
+ roadOffset+=dt*speed*.0007;
+
+ score+=dt/100;
+ document.getElementById("score").textContent=Math.floor(score);
+ document.getElementById("speed").textContent=Math.floor(speed);
+
+ spawnTimer+=dt;
+ let interval=Math.max(480,1550-score*1.2);
+ if(spawnTimer>interval){
+  spawnTraffic();
+  spawnTimer=0;
+ }
+
+ traffic.forEach(car=>{
+  car.y+=(speed*car.factor+25)*.045*step;
+
+  if(Math.abs(car.x-playerX)<38 &&
+     Math.abs(car.y-(H-125))<75){
+    crash();
   }
+ });
+
+ traffic=traffic.filter(car=>car.y<H+100);
+}
+
+function crash(){
+ if(gameOver)return;
+ gameOver=true;
+ running=false;
+
+ if(Math.floor(score)>record){
+  record=Math.floor(score);
+  localStorage.setItem("opelRecord",record);
+ }
+ document.getElementById("record").textContent=record;
+
+ document.querySelector("#overlay h1").innerHTML="💥 АВАРИЯ!";
+ document.querySelector("#overlay p").textContent=
+ "Твой результат: "+Math.floor(score);
+ document.getElementById("start").textContent="ПОПРОБОВАТЬ СНОВА";
+ document.getElementById("overlay").classList.
+remove("hidden");
+}
+
+function draw(){
+ ctx.clearRect(0,0,W,H);
+ drawBackground();
+
+ traffic.forEach(drawTrafficCar);
+
+ // Главная Opel
+ drawOpel(playerX,H-125,1,true);
+
+ // Эффект движения
+ if(speed>120){
+  ctx.strokeStyle="#ffffff15";
+  ctx.lineWidth=2;
+  for(let i=0;i<8;i++){
+   let x=Math.random()*W;
+   let y=Math.random()*H;
+   ctx.beginPath();
+   ctx.moveTo(x,y);
+   ctx.lineTo(x,y+20);
+   ctx.stroke();
+  }
+ }
+}
+
+function loop(time){
+ let dt=Math.min(time-(lastTime||time),40);
+ lastTime=time;
+ update(dt);
+ draw();
+ requestAnimationFrame(loop);
+}
+
+function startGame(){
+ score=0;
+ speed=30;
+ targetSpeed=30;
+ traffic=[];
+ spawnTimer=0;
+ roadOffset=0;
+ playerX=W/2;
+ gameOver=false;
+ paused=false;
+ running=true;
+
+ document.getElementById("pause").textContent="Ⅱ";
+ document.getElementById("overlay").classList.add("hidden");
+ document.getElementById("start").textContent="НАЧАТЬ ГОНКУ";
+}
+
+function bind(id,dir){
+ let el=document.getElementById(id);
+ el.addEventListener("pointerdown",e=>{
+  e.preventDefault();
+  if(dir==="left")left=true;else right=true;
+  el.setPointerCapture(e.pointerId);
+ });
+ function release(){
+  if(dir==="left")left=false;else right=false;
+ }
+ el.addEventListener("pointerup",release);
+ el.addEventListener("pointercancel",release);
+ el.addEventListener("lostpointercapture",release);
+}
+bind("left","left");
+bind("right","right");
+
+addEventListener("keydown",e=>{
+ if(e.key==="ArrowLeft"||e.key==="a")left=true;
+ if(e.key==="ArrowRight"||e.key==="d")right=true;
+});
+addEventListener("keyup",e=>{
+ if(e.key==="ArrowLeft"||e.key==="a")left=false;
+ if(e.key==="ArrowRight"||e.key==="d")right=false;
 });
 
-function loop(time) {
-  let dt = (time - lastTime) / 1000;
+document.getElementById("start").onclick=startGame;
 
-  if (dt > 0.04) dt = 0.04;
-  if (dt < 0) dt = 0;
+document.getElementById("pause").onclick=()=>{
+ if(!running)return;
+ paused=!paused;
+ document.getElementById("pause").textContent=paused?"▶":"Ⅱ";
+};
 
-  lastTime = time;
-
-  update(dt);
-  draw();
-  requestAnimationFrame(loop);
-}
-
+playerX=W/2;
 requestAnimationFrame(loop);
 </script>
 </body>
