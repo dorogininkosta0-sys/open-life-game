@@ -1,1 +1,113 @@
-Скоро будет игра 
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Opel Life Racing</title>
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: #151515;
+  color: white;
+  font-family: Arial, sans-serif;
+  text-align: center;
+}
+h2 { color: #ffcc00; }
+canvas {
+  width: 100%;
+  max-width: 420px;
+  height: 65vh;
+  display: block;
+  margin: auto;
+  background: #333;
+  border: 3px solid white;
+}
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  padding: 18px;
+}
+button {
+  width: 110px;
+  height: 65px;
+  font-size: 30px;
+  border: 0;
+  border-radius: 15px;
+  background: #ffcc00;
+  font-weight: bold;
+}
+</style>
+</head>
+<body>
+<h2>🏁 OPEL LIFE RACING</h2>
+<canvas id="game" width="420" height="650"></canvas>
+<div class="controls">
+<button id="left">⬅️</button>
+<button id="right">➡️</button>
+</div>
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+let carX = 190;
+let roadOffset = 0;
+let left = false;
+let right = false;
+
+function draw() {
+  ctx.fillStyle = "#287a35";
+  ctx.fillRect(0, 0, 420, 650);
+
+  ctx.fillStyle = "#444";
+  ctx.fillRect(65, 0, 290, 650);
+
+  ctx.fillStyle = "white";
+  ctx.fillRect(75, 0, 5, 650);
+  ctx.fillRect(340, 0, 5, 650);
+
+  ctx.fillStyle = "#ffcc00";
+  for (let y = -50; y < 700; y += 100) {
+    ctx.fillRect(207, y + roadOffset, 6, 50);
+  }
+
+  ctx.fillStyle = "#e32636";
+  ctx.fillRect(carX, 520, 40, 75);
+  ctx.fillStyle = "black";
+  ctx.fillRect(carX - 5, 530, 7, 20);
+  ctx.fillRect(carX + 38, 530, 7, 20);
+  ctx.fillRect(carX - 5, 565, 7, 20);
+  ctx.fillRect(carX + 38, 565, 7, 20);
+  ctx.fillStyle = "#9eeaff";
+  ctx.fillRect(carX + 6, 528, 28, 18);
+  ctx.fillStyle = "white";
+  ctx.fillRect(carX + 7, 520, 8, 5);
+  ctx.fillRect(carX + 25, 520, 8, 5);
+
+  if (left) carX -= 5;
+  if (right) carX += 5;
+
+  carX = Math.max(90, Math.min(290, carX));
+  roadOffset = (roadOffset + 5) % 100;
+
+  requestAnimationFrame(draw);
+}
+
+function control(id, direction) {
+  const btn = document.getElementById(id);
+  btn.addEventListener("pointerdown", e => {
+    e.preventDefault();
+    direction(true);
+  });
+  btn.addEventListener("pointerup", () => direction(false));
+  btn.addEventListener("pointerleave", () => direction(false));
+  btn.addEventListener("pointercancel", () => direction(false));
+}
+
+control("left", v => left = v);
+control("right", v => right = v);
+
+draw();
+</script>
+</body>
+</html>
